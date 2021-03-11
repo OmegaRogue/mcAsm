@@ -19,6 +19,12 @@
 
 package app
 
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
 type Parser struct {
 	scanner      Scanner
 	symbols      map[string]int
@@ -64,10 +70,60 @@ loop:
 	return HackFile{Instructions: p.instructions}
 }
 
-func (p *Parser) parseAInstruction(instr Instruction) {
+func (p *Parser) parseAInstruction(instr *AInstruction) {
+	fmt.Println("A: " + instr.lit)
+	a, err := strconv.ParseInt(instr.lit, 10, 15)
+	if err != nil {
+		panic(err)
+	}
+	instr.addr = int(a)
 	// TODO
 }
 
-func (p *Parser) parseCInstruction(instr Instruction) {
+func (p *Parser) parseCInstruction(instr *CInstruction) {
+	lit := instr.lit
+	s := strings.Split(instr.lit, "=")
+	if len(s) == 2 {
+		instr.dest = 0b000
+		if strings.Contains(s[0], "A") {
+			instr.dest |= 0b100
+		}
+		if strings.Contains(s[0], "D") {
+			instr.dest |= 0b010
+		}
+		if strings.Contains(s[0], "M") {
+			instr.dest |= 0b001
+		}
+		lit = s[1]
+	}
+	s = strings.Split(lit, ";")
+	if len(s) == 2 {
+		switch s[1] {
+		case "JGT":
+			instr.jump = 0b001
+			break
+		case "JEQ":
+			instr.jump = 0b010
+			break
+		case "JGE":
+			instr.jump = 0b011
+			break
+		case "JLT":
+			instr.jump = 0b100
+			break
+		case "JNE":
+			instr.jump = 0b101
+			break
+		case "JLE":
+			instr.jump = 0b110
+			break
+		case "JMP":
+			instr.jump = 0b111
+			break
+		}
+		lit = s[0]
+	}
+
+	fmt.Printf("C: %v, %v\n", instr.lit, len(s))
 	// TODO
 }

@@ -48,3 +48,9 @@ type CInstruction struct {
 func (c *CInstruction) BinaryString() string {
 	return fmt.Sprintf("111%07b%03b%03b\n", c.comp, c.dest, c.jump)
 }
+
+//                     ADM
+var t = 0b111_0111111_001_000
+var t2 = 0b111_0101010_001_000
+
+var t3 = 0b111_1110000_010_000

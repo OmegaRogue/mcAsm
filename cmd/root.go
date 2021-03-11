@@ -76,11 +76,6 @@ func Execute() {
 }
 
 func init() {
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
 	rootCmd.Flags().StringVarP(&AsmFilePath, "file", "f", "", "source file")
 	rootCmd.MarkFlagRequired("file")
 	rootCmd.Flags().StringVarP(&OutPath, "out", "o", "", "output file")
