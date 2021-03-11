@@ -20,16 +20,19 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
-	"os"
+	"io/ioutil"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
-	"github.com/mitchellh/go-homedir"
-	"github.com/spf13/viper"
+	"mcAsm/internal/app"
 )
 
-var cfgFile string
+var AsmFilePath string
+var OutPath string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -41,6 +44,26 @@ examples and usage of using your application. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		asmData, _ := ioutil.ReadFile(AsmFilePath) // ignoring errors for brevity
+		if OutPath == "" {
+			OutPath = strings.TrimSuffix(AsmFilePath, filepath.Ext(AsmFilePath)) + ".hack"
+		}
+
+		var p app.Parser
+		p.Init(asmData)
+		hackFile := p.Parse()
+
+		var b bytes.Buffer
+		for _, i := range hackFile.Instructions {
+			b.WriteString(i.BinaryString())
+		}
+		err := ioutil.WriteFile(OutPath, b.Bytes(), 0644)
+		if err != nil {
+			return fmt.Errorf("error on write output: %w", err)
+		}
+		return nil
+	},
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -53,38 +76,12 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.mcAsm.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		cobra.CheckErr(err)
-
-		// Search config in home directory with name ".mcAsm" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".mcAsm")
-	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		_, _ = fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
-	}
+	rootCmd.Flags().StringVarP(&AsmFilePath, "file", "f", "", "source file")
+	rootCmd.MarkFlagRequired("file")
+	rootCmd.Flags().StringVarP(&OutPath, "out", "o", "", "output file")
 }
